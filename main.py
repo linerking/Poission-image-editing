@@ -1,7 +1,7 @@
 '''
 Author: Yihan Liu
 Date: 2022-10-01 21:14:31
-LastEditTime: 2022-10-03 00:12:39
+LastEditTime: 2022-10-03 00:47:07
 Email: 117010177@link.cuhk.edu.cn
 '''
 import numpy as np
@@ -24,7 +24,7 @@ target_path = res_in + target_name + pic_type
 place_to_put = [80,150]
 # Prepare the output file
 res_out = "./res/Output/"
-out_path = res_out + "result.jpeg"
+out_path = res_out + "result3.jpeg"
 
 # load images
 src = np.array(cv2.imread(src_path, 1), dtype=np.float32)
@@ -32,6 +32,8 @@ target = np.array(cv2.imread(target_path, 1), dtype=np.float32)
 mask = np.array(cv2.imread(mask_path, 0), dtype=np.uint8)
 ret, mask = cv2.threshold(mask, 0, 255, cv2.THRESH_OTSU)
 mask = mask/255.0
+gray_src = cv2.cvtColor(src,cv2.COLOR_BGR2GRAY)
+gray_tar = cv2.cvtColor(target,cv2.COLOR_BGR2GRAY)
 # Solve Poisson equation 
 result = ps.Poisson(src,mask,target,place_to_put)
 
