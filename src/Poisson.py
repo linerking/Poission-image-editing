@@ -1,7 +1,7 @@
 '''
 Author: Yihan Liu
 Date: 2022-10-01 21:03:29
-LastEditTime: 2022-10-03 00:41:05
+LastEditTime: 2022-10-03 01:23:46
 Email: 117010177@link.cuhk.edu.cn
 '''
 import numpy as np
@@ -30,14 +30,38 @@ def find_min(a):
         if i < buf:
             buf = i
     return buf
-def calculate_lapla(index,src,tar,off):
+def calculate_lapla(index,src,tar,g_src,g_tar,off):
     i,j = index
     i2,j2 = i + off[0], j+off[1]
-    lapla1 = (4 * src[i][j]) - src[i+1][j] - src[i-1][j] - src[i][j+1] - src[i][j-1]
-    lapla2 = (4 * tar[i2][j2]) - tar[i2+1][j2] - tar[i2-1][j2] - tar[i2][j2+1] - tar[i2][j2-1]
-    # if abs(lapla2) > abs(lapla1): return lapla2
-    return (lapla1+lapla2)/2
-def Poisson(src,mask,target,place_to_put):
+    # lapla1 = (4 * src[i][j]) - src[i+1][j] - src[i-1][j] - src[i][j+1] - src[i][j-1]
+    # lapla2 = (4 * tar[i2][j2]) - tar[i2+1][j2] - tar[i2-1][j2] - tar[i2][j2+1] - tar[i2][j2-1]
+    # lapla1_g = (4 * g_src[i][j]) - g_src[i+1][j] - g_src[i-1][j] - g_src[i][j+1] - g_src[i][j-1]
+    # lapla2_g = (4 * g_tar[i2][j2]) - g_tar[i2+1][j2] - g_tar[i2-1][j2] - g_tar[i2][j2+1] - g_tar[i2][j2-1]
+    # if abs(lapla2_g) > abs(lapla1_g): return lapla2
+    lapla = 0
+    if abs(g_src[i][j] - g_src[i+1][j]) < abs(tar[i2][j2] - tar[i2+1][j2]):
+        lapla += tar[i2][j2] - tar[i2+1][j2]
+    else:
+        lapla += src[i][j] - src[i+1][j]
+        
+    if abs(g_src[i][j] - g_src[i-1][j]) < abs(tar[i2][j2] - tar[i2-1][j2]):
+        lapla += tar[i2][j2] - tar[i2-1][j2]
+    else:
+        lapla += src[i][j] - src[i-1][j]
+        
+        
+    if abs(g_src[i][j] - g_src[i][j+1]) < abs(tar[i2][j2] - tar[i2][j2+1]):
+        lapla += tar[i2][j2] - tar[i2][j2+1]
+    else:
+        lapla += src[i][j] - src[i][j+1]
+        
+        
+    if abs(g_src[i][j] - g_src[i][j-1]) < abs(tar[i2][j2] - tar[i2][j2-1]):
+        lapla += tar[i2][j2] - tar[i2][j2-1]
+    else:
+        lapla += src[i][j] - src[i][j-1]
+    return lapla
+def Poisson(src,mask,target,gray_src,gray_tar,place_to_put):
     omega_src = np.nonzero(mask)
     top_left = [omega_src[0][0],find_min(omega_src[1])]
     offset = [place_to_put[0]-top_left[0],place_to_put[1]-top_left[1]]
@@ -54,7 +78,7 @@ def Poisson(src,mask,target,place_to_put):
         target_channel = target[:,:,i]
         Lapla_g = np.zeros(pix_in_omega)
         for j,index in enumerate(a):
-            Lapla_g[j] = calculate_lapla(index,src_channel,target_channel,offset)
+            Lapla_g[j] = calculate_lapla(index,src_channel,target_channel,gray_src,gray_tar,offset)
             for n in get_neighbor(index):
                 if mask[n] == 0:
                     x,y = n
