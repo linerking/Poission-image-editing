@@ -1,7 +1,7 @@
 '''
 Author: Yihan Liu
 Date: 2022-10-01 21:03:29
-LastEditTime: 2022-10-03 01:23:46
+LastEditTime: 2022-10-03 17:03:00
 Email: 117010177@link.cuhk.edu.cn
 '''
 import numpy as np
@@ -11,25 +11,56 @@ from scipy.sparse import linalg
 
 
 np.set_printoptions(threshold=np.inf)
-
+'''
+description: 
+get the neibourhood of index 
+param {*} index
+return {*}
+'''
 def get_neighbor(index):
     i,j = index
     return [(i+1,j),(i-1,j),(i,j+1),(i,j-1)]
-def create_lapla_matrix(N,omega):
+'''
+description: 
+create the lapla f matrix for linear problem
+param {*} N
+param {*} omega
+param {*} mask
+return {*}
+'''
+def create_lapla_matrix(N,omega,mask):
     A = lil_matrix((N,N))
     for i,index in enumerate(omega):
+        # print(i)
         A[i,i] = 4
         for x in get_neighbor(index):
-            if x not in omega: continue
+            if mask[x] == 0: continue
             j = omega.index(x)
             A[i,j] = -1
     return A
+'''
+description:
+find the minimum value in a  
+param {*} a
+return {*}
+'''
 def find_min(a):
-    buf = 100000
+    buf = 1000000
     for i in a:
         if i < buf:
             buf = i
     return buf
+'''
+description: 
+calculate the laplacian at index, vpq is depends on the gray image
+param {*} index
+param {*} src
+param {*} tar
+param {*} g_src
+param {*} g_tar
+param {*} off
+return {*}
+'''
 def calculate_lapla(index,src,tar,g_src,g_tar,off):
     i,j = index
     i2,j2 = i + off[0], j+off[1]
@@ -39,28 +70,46 @@ def calculate_lapla(index,src,tar,g_src,g_tar,off):
     # lapla2_g = (4 * g_tar[i2][j2]) - g_tar[i2+1][j2] - g_tar[i2-1][j2] - g_tar[i2][j2+1] - g_tar[i2][j2-1]
     # if abs(lapla2_g) > abs(lapla1_g): return lapla2
     lapla = 0
-    if abs(g_src[i][j] - g_src[i+1][j]) < abs(tar[i2][j2] - tar[i2+1][j2]):
+    if abs(g_src[i][j] - g_src[i+1][j]) < abs(g_tar[i2][j2] - g_tar[i2+1][j2]):
         lapla += tar[i2][j2] - tar[i2+1][j2]
     else:
         lapla += src[i][j] - src[i+1][j]
         
-    if abs(g_src[i][j] - g_src[i-1][j]) < abs(tar[i2][j2] - tar[i2-1][j2]):
+    if abs(g_src[i][j] - g_src[i-1][j]) < abs(g_tar[i2][j2] - g_tar[i2-1][j2]):
         lapla += tar[i2][j2] - tar[i2-1][j2]
     else:
         lapla += src[i][j] - src[i-1][j]
         
         
-    if abs(g_src[i][j] - g_src[i][j+1]) < abs(tar[i2][j2] - tar[i2][j2+1]):
+    if abs(g_src[i][j] - g_src[i][j+1]) < abs(g_tar[i2][j2] - g_tar[i2][j2+1]):
         lapla += tar[i2][j2] - tar[i2][j2+1]
     else:
         lapla += src[i][j] - src[i][j+1]
         
         
-    if abs(g_src[i][j] - g_src[i][j-1]) < abs(tar[i2][j2] - tar[i2][j2-1]):
+    if abs(g_src[i][j] - g_src[i][j-1]) < abs(g_tar[i2][j2] - g_tar[i2][j2-1]):
         lapla += tar[i2][j2] - tar[i2][j2-1]
     else:
         lapla += src[i][j] - src[i][j-1]
     return lapla
+
+
+
+
+
+'''
+description: 
+Generate the seamless cloning by solving poisson equation
+
+param {*} src
+param {*} mask
+param {*} target
+param {*} gray_src
+param {*} gray_tar
+param {*} place_to_put
+return {*}
+
+'''
 def Poisson(src,mask,target,gray_src,gray_tar,place_to_put):
     omega_src = np.nonzero(mask)
     top_left = [omega_src[0][0],find_min(omega_src[1])]
@@ -69,7 +118,7 @@ def Poisson(src,mask,target,gray_src,gray_tar,place_to_put):
     a = list(omega_src)
     pix_in_omega = len(a)
     # matrix for calculate the laplacian of f
-    Lapla_f_A = create_lapla_matrix(pix_in_omega,a)
+    Lapla_f_A = create_lapla_matrix(pix_in_omega,a,mask)
     result = []
     # handle the pic channel by channel
     for i in range(3):
