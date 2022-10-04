@@ -1,7 +1,7 @@
 '''
 Author: Yihan Liu
 Date: 2022-10-01 21:03:29
-LastEditTime: 2022-10-03 17:03:00
+LastEditTime: 2022-10-04 17:58:44
 Email: 117010177@link.cuhk.edu.cn
 '''
 import numpy as np
@@ -122,7 +122,6 @@ def Poisson(src,mask,target,gray_src,gray_tar,place_to_put):
     result = []
     # handle the pic channel by channel
     for i in range(3):
-        print(1)
         src_channel = src[:,:,i]
         target_channel = target[:,:,i]
         Lapla_g = np.zeros(pix_in_omega)
